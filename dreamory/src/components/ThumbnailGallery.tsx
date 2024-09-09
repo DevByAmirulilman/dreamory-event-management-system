@@ -107,6 +107,7 @@ const ThumbnailGallery = () => {
   if (!data || !Array.isArray(data)) {
     return <div>No events found</div>;
   }
+  console.log(data)
 
   return (
     <>
@@ -151,6 +152,9 @@ const ThumbnailGallery = () => {
                 <Typography variant="subtitle1" align="center">
                   End Date: {format(new Date(res.enddate), "MM/dd/yyyy")}
                 </Typography>
+                <Typography variant="subtitle1" align="center">
+                  Status: {res.status}
+                </Typography>
               </CardContent>
               {
                 user.token.length > 0 ? 
@@ -184,6 +188,7 @@ const ThumbnailGallery = () => {
           eventStartDate={format(new Date(openEventDetails.startdate), "yyyy-MM-dd")}
           eventThumbnail={openEventDetails.thumbnail}
           eventId={openEventDetails._id}
+          eventStatus={openEventDetails.status}
         />
       )}
 
@@ -197,6 +202,7 @@ const ThumbnailGallery = () => {
           eventStartDate={format(new Date(openEvent.startdate), "yyyy-MM-dd")}
           eventThumbnail={openEvent.thumbnail}
           eventId={openEvent._id}
+          eventStatus={openEvent.status}
         />
       )}
     </>

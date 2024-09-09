@@ -1,4 +1,4 @@
-import { Box, Button, IconButton, Modal, TextField, Typography } from '@mui/material';
+import { Box, Button, IconButton, MenuItem, Modal, Select, SelectChangeEvent, TextField, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import CloseIcon from '@mui/icons-material/Close';
 import axios, { AxiosResponse } from 'axios';
@@ -17,6 +17,7 @@ export interface FormProps {
   endDate: string;
   thumbnail: File | null;
   createdby: string;
+  status:string
 }
 
 type AddEventData = FormProps;
@@ -24,6 +25,7 @@ type AddEventData = FormProps;
 const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
   // State for form fields
   const [name, setName] = useState('');
+  const [status,setStatus] = useState('Ongoing')
   const [location, setLocation] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -60,6 +62,8 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
       formData.append('startdate', eventData.startDate);
       formData.append('enddate', eventData.endDate);
       formData.append('createdby', eventData.createdby);
+      formData.append('status', eventData.status);
+
       if (eventData.thumbnail) {
         formData.append('thumbnail', eventData.thumbnail);
       }
@@ -90,6 +94,8 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
       formData.append('startdate', eventData.startDate); 
       formData.append('enddate', eventData.endDate);
       formData.append('createdby', eventData.createdby);
+      formData.append('status', eventData.status);
+
       if (eventData.thumbnail) {
         formData.append('thumbnail', eventData.thumbnail);
       }
@@ -101,6 +107,7 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
         endDate,
         thumbnail,
         createdby: user?.userId || '',
+        status
       });
 
     } catch (err) {
@@ -121,6 +128,7 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
         endDate,
         thumbnail,
         createdby: user?.userId || '',
+        status
       });
       console.log(thumbnail)
 
@@ -133,6 +141,11 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
       handleModalClose();
     }
   };
+
+  const handleChange = (event: SelectChangeEvent) => {
+    setStatus(event.target.value as string);
+  };
+
 
   return (
     <Modal
@@ -242,6 +255,19 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
                   Selected file: {thumbnail.name}
                 </Typography>
               )}
+            </Box>
+
+            <Box sx={{ mb: 2 }}>
+              <Typography>End Date</Typography>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={status}
+                label="Age"
+                onChange={handleChange}>
+                <MenuItem value={'Ongoing'}>Ongoing</MenuItem>
+                <MenuItem value={'Completed'}>Completed</MenuItem>
+            </Select>
             </Box>
 
             <Box sx={{ mb: 2 }}>

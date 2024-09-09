@@ -1,4 +1,4 @@
-import { Modal, Box, IconButton, Typography, TextField, Button } from '@mui/material';
+import { Modal, Box, IconButton, Typography, TextField, Button, MenuItem, Select, SelectChangeEvent } from '@mui/material';
 import React, { useState, useEffect } from 'react';
 import CloseIcon from '@mui/icons-material/Close';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ interface EditEventProps {
   eventEndDate: string;
   eventThumbnail: string | null; // Use string (URL) for existing thumbnail
   eventId: string;
+  eventStatus:string
 }
 
 type EditEventData = {
@@ -23,6 +24,7 @@ type EditEventData = {
   endDate: string;
   thumbnail: File | null; // Handle file input separately for uploads
   createdby: string;
+  status:string
 };
 
 const EditEventComponent: React.FC<EditEventProps> = ({
@@ -34,8 +36,10 @@ const EditEventComponent: React.FC<EditEventProps> = ({
   eventEndDate,
   eventThumbnail,
   eventId,
+  eventStatus
 }) => {
   const [name, setName] = useState(eventName);
+  const [status,setStatus] = useState(eventStatus)
   const [location, setLocation] = useState(eventLocation);
   const [startDate, setStartDate] = useState(eventStartDate);
   const [endDate, setEndDate] = useState(eventEndDate);
@@ -62,6 +66,10 @@ const EditEventComponent: React.FC<EditEventProps> = ({
     }
   };
 
+  const handleChange = (event: SelectChangeEvent) => {
+    setStatus(event.target.value as string);
+  };
+
   const mutation = useMutation<
     AxiosResponse<any>,
     Error,
@@ -74,6 +82,7 @@ const EditEventComponent: React.FC<EditEventProps> = ({
       formData.append('startdate', eventData.startDate);
       formData.append('enddate', eventData.endDate);
       formData.append('createdby', eventData.createdby);
+      formData.append('status', eventData.status);
 
       if (eventData.thumbnail) {
         formData.append('thumbnail', eventData.thumbnail); // Ensure this is a File object
@@ -109,6 +118,7 @@ const EditEventComponent: React.FC<EditEventProps> = ({
         endDate,
         thumbnail,
         createdby: user?.userId || '',
+        status
       });
     }
   };
@@ -227,6 +237,19 @@ const EditEventComponent: React.FC<EditEventProps> = ({
                   Current thumbnail: <img src={eventThumbnail} alt="Event thumbnail" width={100} />
                 </Typography>
               )}
+            </Box>
+
+            <Box sx={{ mb: 2 }}>
+              <Typography>End Date</Typography>
+              <Select
+                labelId="demo-simple-select-label"
+                id="demo-simple-select"
+                value={status}
+                label="Age"
+                onChange={handleChange}>
+                <MenuItem value={'Ongoing'}>Ongoing</MenuItem>
+                <MenuItem value={'Completed'}>Completed</MenuItem>
+            </Select>
             </Box>
 
             <Box sx={{ mb: 2 }}>

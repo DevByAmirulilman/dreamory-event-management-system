@@ -12,6 +12,7 @@ interface DetailsEventProps {
   eventEndDate: string;
   eventThumbnail: string | null;
   eventId: string;
+  eventStatus:string
 }
 
 const DetailsComponent: React.FC<DetailsEventProps> = ({
@@ -23,6 +24,7 @@ const DetailsComponent: React.FC<DetailsEventProps> = ({
   eventEndDate,
   eventThumbnail,
   eventId,
+  eventStatus
 }) => {
   const { user } = useAuth();
 
@@ -119,6 +121,18 @@ const DetailsComponent: React.FC<DetailsEventProps> = ({
                 margin="normal"
                 type="date"
                 value={eventEndDate}
+              />
+            </Box>
+
+            <Box sx={{ mb: 2 }}>
+              <Typography>Status</Typography>
+              <TextField
+                disabled
+                id="end-date"
+                variant="outlined"
+                fullWidth
+                margin="normal"
+                value={eventStatus}
               />
             </Box>
 
