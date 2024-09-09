@@ -1,38 +1,48 @@
-import { Box, Button, IconButton, Modal, TextField, Typography } from '@mui/material';
+import { Modal, Box, IconButton, Typography, TextField, Button } from '@mui/material';
 import React, { useState } from 'react';
 import CloseIcon from '@mui/icons-material/Close';
-import axios, { AxiosResponse } from 'axios';
-import { useAuth } from '../context/AuthContext';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '../context/AuthContext';
+import axios, { AxiosResponse } from 'axios';
 
-interface AddEventProps {
+interface EditEventProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
+  eventName: string;
+  eventLocation: string;
+  eventStartDate: string;
+  eventEndDate: string;
+  eventThumbnail: File | null;
+  eventId: string;
 }
 
-export interface FormProps {
+type EditEventData = {
   name: string;
   location: string;
   startDate: string;
   endDate: string;
   thumbnail: File | null;
   createdby: string;
-}
+};
 
-type AddEventData = FormProps;
-
-const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
-  // State for form fields
-  const [name, setName] = useState('');
-  const [location, setLocation] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [thumbnail, setThumbnail] = useState<File | null>(null);
+const EditEventComponent: React.FC<EditEventProps> = ({
+  isOpen,
+  setIsOpen,
+  eventName,
+  eventLocation,
+  eventStartDate,
+  eventEndDate,
+  eventThumbnail,
+  eventId,
+}) => {
+  const [name, setName] = useState(eventName);
+  const [location, setLocation] = useState(eventLocation);
+  const [startDate, setStartDate] = useState(eventStartDate);
+  const [endDate, setEndDate] = useState(eventEndDate);
+  const [thumbnail, setThumbnail] = useState<File | null>(eventThumbnail);
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
-
-  
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   const handleModalClose = () => {
     setIsOpen(false);
@@ -42,58 +52,49 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
     const file = e.target.files?.[0];
     if (file) {
       setThumbnail(file);
-      console.log(file)
     }
   };
-
-
+  
 
   const mutation = useMutation<
-    AxiosResponse<any>, // Response type
-    Error, // Error type
-    AddEventData // Variables type
-  >({
-    mutationFn: async (eventData: AddEventData) => {
-      const formData = new FormData();
-      formData.append('name', eventData.name);
-      formData.append('location', eventData.location);
-      formData.append('startdate', eventData.startDate);
-      formData.append('enddate', eventData.endDate);
-      formData.append('createdby', eventData.createdby);
-      if (eventData.thumbnail) {
-        formData.append('thumbnail', eventData.thumbnail);
-      }
+  AxiosResponse<any>, // Response type
+  Error, // Error type
+  EditEventData // Variables type
+>({
+  mutationFn: async (eventData: EditEventData) => {
+    const formData = new FormData();
+    formData.append('name', eventData.name);
+    formData.append('location', eventData.location);
+    formData.append('startdate', eventData.startDate);
+    formData.append('enddate', eventData.endDate);
+    formData.append('createdby', eventData.createdby);
+    if (eventData.thumbnail) {
+      formData.append('thumbnail', eventData.thumbnail); // Ensure this is a File object
+    }
 
-      return axios.post('http://localhost:8000/api/event', formData, {
-        headers: {
-          Authorization: `${user?.token}`, // Use the token from the auth context
-        },
-      });
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['events'] });
-      setIsOpen(false); // Close the modal on success
-    },
-    onError: (err) => {
-      setError('Failed to add event. Please try again.');
-      console.error('Error adding event:', err);
-    },
-  });
+    return axios.post(`http://localhost:8000/api/event/update/${eventId}`, formData, {
+      headers: {
+        Authorization: `${user?.token}`,
+        'Content-Type': 'multipart/form-data', // Ensure this header is set for file uploads
+      },
+    });
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['events'] });
+    setIsOpen(false); // Close the modal on success
+  },
+  onError: (err: any) => {
+    setError('Failed to update event. Please try again.');
+    console.error('Error updating event:', err);
+  },
+});
 
-  const addEvent = async (eventData: FormProps) => {
-    try {
-      const formData = new FormData();
-
-      // Append the form fields to the FormData object
-      formData.append('name', eventData.name);
-      formData.append('location', eventData.location);
-      formData.append('startdate', eventData.startDate); 
-      formData.append('enddate', eventData.endDate);
-      formData.append('createdby', eventData.createdby);
-      if (eventData.thumbnail) {
-        formData.append('thumbnail', eventData.thumbnail);
-      }
-
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !location || !startDate || !endDate) {
+      setError('All fields are required.');
+    } else {
+      setError('');
       mutation.mutate({
         name,
         location,
@@ -103,34 +104,6 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
         createdby: user?.userId || '',
       });
 
-    } catch (err) {
-      console.error('Error adding event:', err);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!name || !location || !startDate || !endDate || !thumbnail) {
-      setError('All fields, including the thumbnail, are required');
-    } else {
-      setError('');
-      addEvent({
-        name,
-        location,
-        startDate,
-        endDate,
-        thumbnail,
-        createdby: user?.userId || '',
-      });
-      console.log(thumbnail)
-
-      // Reset form values after submission
-      setName('');
-      setLocation('');
-      setStartDate('');
-      setEndDate('');
-      setThumbnail(null);
-      handleModalClose();
     }
   };
 
@@ -138,8 +111,8 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
     <Modal
       open={isOpen}
       onClose={handleModalClose}
-      aria-labelledby="add-event-modal-title"
-      aria-describedby="add-event-modal-description"
+      aria-labelledby="edit-event-modal-title"
+      aria-describedby="edit-event-modal-description"
     >
       <Box
         sx={{
@@ -171,8 +144,8 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
             <CloseIcon />
           </IconButton>
 
-          <Typography id="add-event-modal-title" variant="h6" component="h2" gutterBottom>
-            Add Event
+          <Typography id="edit-event-modal-title" variant="h6" component="h2" gutterBottom>
+            Edit Event
           </Typography>
 
           <form onSubmit={handleSubmit} style={{ padding: '20px 0' }}>
@@ -245,14 +218,13 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
             </Box>
 
             <Box sx={{ mb: 2 }}>
-              <Typography>Create By: {user.name}</Typography>
+              <Typography>Created By</Typography>
               <TextField
                 id="createdby"
                 variant="outlined"
                 fullWidth
                 margin="normal"
-                label='Id'
-                value={user?.userId || ''} // Set the default or dynamic value you want to display
+                value={user?.userId || ''}
                 InputProps={{
                   readOnly: true, // Makes the field read-only
                 }}
@@ -275,4 +247,4 @@ const AddEventComponent: React.FC<AddEventProps> = ({ isOpen, setIsOpen }) => {
   );
 };
 
-export default AddEventComponent;
+export default EditEventComponent;

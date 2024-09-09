@@ -11,13 +11,13 @@ export const createEvent = async(req,res)=>{
             return res.json({error:"Name is required"})
         }
         if(!location){
-            return res.json({error:"Name is required"})
+            return res.json({error:"Location is required"})
         }
         if(!startdate){
-            return res.json({error:"Name is required"})
+            return res.json({error:"Start DDate is required"})
         }
         if(!enddate){
-            return res.json({error:"Name is required"})
+            return res.json({error:"End Date is required"})
         }
 
         if(thumbnail && thumbnail > 1000000){
@@ -38,7 +38,7 @@ export const createEvent = async(req,res)=>{
         }
 
         await event.save()
-
+        console.log(req.fields)
         res.json(event)
     } catch(err){
         //
@@ -78,31 +78,38 @@ export const getThumbnail = async (req, res) => {
     }
 };
 
-export const updateEvent = async (req,res) => {
-    try{
-        //
-        const {thumbnail} = req.files
 
-        if(thumbnail && thumbnail > 1000000){
-            return res.json({error:"thumnail size is too Big"})
-        }
+export const updateEvent = async (req, res) => {
+  try {
+    const { thumbnail } = req.files;
 
-        const event = await Event.findByIdAndUpdate(req.params.eventId,{
-            ...req.fields
-        },{new:true})
-
-        if(thumbnail){
-            event.thumbnail.data = fs.readFileSync(thumbnail.path)
-            event.thumbnail.contentType = thumbnail.type
-        }
-
-        await event.save()
-        res.json(event)
-
-    } catch(err){
-        console.log(err)
+    // Check thumbnail size
+    if (thumbnail && thumbnail.size > 1000000) { // 1 MB
+      return res.status(400).json({ error: "Thumbnail size is too big" });
     }
-}
+
+    // Update event fields
+    const event = await Event.findByIdAndUpdate(req.params.eventId, req.fields, { new: true });
+
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    // Save thumbnail if present
+    if (thumbnail) {
+      event.thumbnail.data = fs.readFileSync(thumbnail.path);
+      event.thumbnail.contentType = thumbnail.mimetype;
+    }
+
+    // Save updated event
+    await event.save();
+
+    res.json(event);
+  } catch (err) {
+    console.error('Error updating event:', err);
+    res.status(500).json({ error: "Server error" });
+  }
+};
 
 export const deleteEvent = async (req,res) => {
     try{

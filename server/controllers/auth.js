@@ -40,6 +40,7 @@ export const registerUser = async(req,res) => {
                 name:user.name,
                 email:user.email,
                 password:user.password,
+                userId:user._id
             },
             token
         })
