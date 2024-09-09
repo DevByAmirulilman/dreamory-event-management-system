@@ -131,7 +131,7 @@ const ThumbnailGallery = () => {
       <Grid container spacing={3} justifyContent="center" marginTop={3}>
         {filteredData.map((res: any, index: number) => (
           <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-            <Card onClick={() => setOpenEventDetails(res)}>
+            <Card onClick={() => user.token.length > 0 ? console.log('admin'):setOpenEventDetails(res)}>
               <CardMedia
                 component="img"
                 height="150"

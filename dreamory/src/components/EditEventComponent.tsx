@@ -1,5 +1,5 @@
 import { Modal, Box, IconButton, Typography, TextField, Button } from '@mui/material';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CloseIcon from '@mui/icons-material/Close';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
@@ -12,7 +12,7 @@ interface EditEventProps {
   eventLocation: string;
   eventStartDate: string;
   eventEndDate: string;
-  eventThumbnail: File | null;
+  eventThumbnail: string | null; // Use string (URL) for existing thumbnail
   eventId: string;
 }
 
@@ -21,7 +21,7 @@ type EditEventData = {
   location: string;
   startDate: string;
   endDate: string;
-  thumbnail: File | null;
+  thumbnail: File | null; // Handle file input separately for uploads
   createdby: string;
 };
 
@@ -39,10 +39,17 @@ const EditEventComponent: React.FC<EditEventProps> = ({
   const [location, setLocation] = useState(eventLocation);
   const [startDate, setStartDate] = useState(eventStartDate);
   const [endDate, setEndDate] = useState(eventEndDate);
-  const [thumbnail, setThumbnail] = useState<File | null>(eventThumbnail);
+  const [thumbnail, setThumbnail] = useState<File | null>(null); // Track new file uploads
   const [error, setError] = useState('');
   const queryClient = useQueryClient();
   const { user } = useAuth();
+
+  useEffect(() => {
+    setName(eventName);
+    setLocation(eventLocation);
+    setStartDate(eventStartDate);
+    setEndDate(eventEndDate);
+  }, [eventName, eventLocation, eventStartDate, eventEndDate]);
 
   const handleModalClose = () => {
     setIsOpen(false);
@@ -54,40 +61,40 @@ const EditEventComponent: React.FC<EditEventProps> = ({
       setThumbnail(file);
     }
   };
-  
 
   const mutation = useMutation<
-  AxiosResponse<any>, // Response type
-  Error, // Error type
-  EditEventData // Variables type
->({
-  mutationFn: async (eventData: EditEventData) => {
-    const formData = new FormData();
-    formData.append('name', eventData.name);
-    formData.append('location', eventData.location);
-    formData.append('startdate', eventData.startDate);
-    formData.append('enddate', eventData.endDate);
-    formData.append('createdby', eventData.createdby);
-    if (eventData.thumbnail) {
-      formData.append('thumbnail', eventData.thumbnail); // Ensure this is a File object
-    }
+    AxiosResponse<any>,
+    Error,
+    EditEventData
+  >({
+    mutationFn: async (eventData: EditEventData) => {
+      const formData = new FormData();
+      formData.append('name', eventData.name);
+      formData.append('location', eventData.location);
+      formData.append('startdate', eventData.startDate);
+      formData.append('enddate', eventData.endDate);
+      formData.append('createdby', eventData.createdby);
 
-    return axios.post(`http://localhost:8000/api/event/update/${eventId}`, formData, {
-      headers: {
-        Authorization: `${user?.token}`,
-        'Content-Type': 'multipart/form-data', // Ensure this header is set for file uploads
-      },
-    });
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['events'] });
-    setIsOpen(false); // Close the modal on success
-  },
-  onError: (err: any) => {
-    setError('Failed to update event. Please try again.');
-    console.error('Error updating event:', err);
-  },
-});
+      if (eventData.thumbnail) {
+        formData.append('thumbnail', eventData.thumbnail); // Ensure this is a File object
+      }
+
+      return axios.post(`http://localhost:8000/api/event/update/${eventId}`, formData, {
+        headers: {
+          Authorization: `${user?.token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      setIsOpen(false);
+    },
+    onError: (err: any) => {
+      setError('Failed to update event. Please try again.');
+      console.error('Error updating event:', err);
+    },
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +110,6 @@ const EditEventComponent: React.FC<EditEventProps> = ({
         thumbnail,
         createdby: user?.userId || '',
       });
-
     }
   };
 
@@ -207,12 +213,18 @@ const EditEventComponent: React.FC<EditEventProps> = ({
                 fullWidth
                 margin="normal"
                 type="file"
-                inputProps={{ accept: 'image/*' }} // Accept image files only
+                inputProps={{ accept: 'image/*' }}
                 onChange={handleFileChange}
               />
               {thumbnail && (
                 <Typography variant="body2" sx={{ mt: 1 }}>
                   Selected file: {thumbnail.name}
+                </Typography>
+              )}
+              {/* Display current thumbnail if available */}
+              {eventThumbnail && !thumbnail && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Current thumbnail: <img src={eventThumbnail} alt="Event thumbnail" width={100} />
                 </Typography>
               )}
             </Box>
@@ -226,7 +238,7 @@ const EditEventComponent: React.FC<EditEventProps> = ({
                 margin="normal"
                 value={user?.userId || ''}
                 InputProps={{
-                  readOnly: true, // Makes the field read-only
+                  readOnly: true,
                 }}
               />
             </Box>
